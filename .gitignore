@@ -1,0 +1,6 @@
+.env
+*_token.json
+integrations/*.json
+.venv
+__pycache__/
+token.json
