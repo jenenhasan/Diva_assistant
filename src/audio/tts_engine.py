@@ -44,3 +44,4 @@ class TTSEngine:
     @property
     def is_speaking(self) -> bool:
         return self._is_speaking
+    
