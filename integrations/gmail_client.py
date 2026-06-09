@@ -12,10 +12,14 @@ SCOPES = [
     "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/gmail.modify"
 ]
-creds_path = pathlib.Path(__file__).parent / "credentials.json"
+
 class GmailClient:
-    def __init__(self, creds_file: str = "credentials.json", token_file: str = "gmail_token.json"):
-        self.creds_file = creds_file
+    def __init__(self, creds_file: str = None, token_file: str = "gmail_token.json"):
+        self.project_root = pathlib.Path(__file__).parent.parent
+        if creds_file is None : 
+            self.creds_file = str(self.project_root /"credentails.json")
+        else : 
+            self.creds_file = creds_file
         self.token_file = token_file
         self.service = self._authenticate()
 
@@ -49,9 +53,9 @@ class GmailClient:
 
     def get_message(self, msg_id: str) -> dict:
         return self.service.users().messages().get(userId="me", id=msg_id).execute()
-    
+
+
 if __name__ == '__main__':
-    client = GmailClient(creds_file=creds_path)
-  
+    client = GmailClient()
     messages = client.list_messages(max_results=3)
-    print(f"success Found {len(messages)} in inbox")
+    print(f"Found {len(messages)} messages in inbox")
