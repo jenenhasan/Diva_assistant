@@ -3,7 +3,6 @@ import torchaudio
 import whisper
 import logging
 import time
-from pathlib import Path
 from typing import Optional, Tuple
 from dataclasses import dataclass
 
@@ -14,11 +13,10 @@ logger = logging.getLogger(__name__)
 class RecognitionResult:
     text: str
     confidence: float
-    engine: str   # 'silero' or 'whisper'
+    engine: str
     processing_time: float
 
 class STTEngine:
-    """Hybrid STT: Silero (fast) + Whisper (accurate fallback)."""
     SAMPLE_RATE = 16000
     SILERO_CONF_THRESHOLD = 0.5
 
@@ -76,7 +74,6 @@ class STTEngine:
             text = self.silero_decoder(output[0].cpu()).strip()
             if not text:
                 return None
-            # Heuristic confidence
             conf = min(1.0, len(text.split()) / 8.0)
             return RecognitionResult(text=text, confidence=conf, engine='silero', processing_time=time.time()-start)
         except Exception as e:

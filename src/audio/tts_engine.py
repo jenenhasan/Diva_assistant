@@ -3,8 +3,6 @@ import pyttsx3
 import platform
 
 class TTSEngine:
-    """Thread safe TTS wrapper with interrupt capability."""
-    
     def __init__(self, rate: int = 180, volume: float = 1.0):
         self._lock = threading.Lock()
         self.engine = self._init_engine(rate, volume)
@@ -19,11 +17,10 @@ class TTSEngine:
         engine.setProperty('volume', volume)
         voices = engine.getProperty('voices')
         if len(voices) > 1:
-            engine.setProperty('voice', voices[1].id)   # prefer female voice
+            engine.setProperty('voice', voices[1].id)
         return engine
 
     def speak(self, text: str):
-        """Speak text. Blocks until done, but can be interrupted by `stop()`."""
         if not text:
             return
         with self._lock:
@@ -35,7 +32,6 @@ class TTSEngine:
                 self._is_speaking = False
 
     def stop(self):
-        """Stop any ongoing speech immediately."""
         with self._lock:
             if self._is_speaking:
                 self.engine.stop()
@@ -44,4 +40,3 @@ class TTSEngine:
     @property
     def is_speaking(self) -> bool:
         return self._is_speaking
-    

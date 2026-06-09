@@ -3,18 +3,12 @@ import time
 import logging
 from typing import Callable, Optional
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 WAKE_WORDS = ["diva", "hey diva", "hello diva", "wake up"]
 
-
 class WakeWordDetector:
-    """
-    Lightweight wake-word detector that uses the existing STT engine.
-    It continuously records short audio clips and checks for a wake word.
-    When triggered it calls the provided callback.
-    """
-
     def __init__(self, recorder, stt_engine, callback: Callable, wake_words: list = None):
         self.recorder = recorder
         self.stt = stt_engine
@@ -23,8 +17,10 @@ class WakeWordDetector:
         self._running = False
         self._thread: Optional[threading.Thread] = None
 
-    def _contains_wake_word(self, text: str) -> bool:
-        text_lower = text.lower()
+    def _contains_wake_word(self, result) -> bool:
+        if result.confidence < 0.3:
+            return False
+        text_lower = result.text.lower()
         return any(word in text_lower for word in self.wake_words)
 
     def _listen_loop(self):
@@ -35,10 +31,10 @@ class WakeWordDetector:
                 if not audio_path:
                     continue
                 result = self.stt.recognize(audio_path)
-                if result and self._contains_wake_word(result.text):
+                if result and self._contains_wake_word(result):
                     logger.info(f"Wake word detected: '{result.text}'")
                     self.callback()
-                    time.sleep(1.0)  # brief cooldown after trigger
+                    time.sleep(1.0)
             except Exception as e:
                 logger.error(f"Wake-word loop error: {e}")
                 time.sleep(0.5)
