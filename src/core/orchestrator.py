@@ -1,9 +1,11 @@
+# core/orchestrator.py
 class Orchestrator:
-    def __init__(self, dialog, router, handlers, gemini_service=None):
+    def __init__(self, dialog, router, handlers, gemini_service=None, memory=None):
         self.dialog = dialog
         self.router = router
         self.handlers = handlers
         self.gemini = gemini_service
+        self.memory = memory  # ← ADDED
         self.running = True
 
     def run(self):
@@ -12,17 +14,31 @@ class Orchestrator:
             text = self.dialog.listen(timeout=3)
             if not text:
                 continue
+            
+           
+            if self.memory:
+                resolved = self.memory.resolve_follow_up(text)
+                if resolved and resolved != text:
+                    self.dialog.speak(f"I think you meant: {resolved}")
+                    text = resolved
+            
             text_lower = text.lower()
-            # Wake word check (simple)
+            
+            # Wake word check
             if any(w in text_lower for w in ["hello", "hey", "wake up", "diva"]):
                 self.dialog.speak("Yes? How can I help?")
                 continue
+                
             if "goodbye" in text_lower or "exit" in text_lower:
                 self.dialog.speak("Goodbye!")
                 self.running = False
                 break
+                
             handler = self.router.route(text)
             if handler:
+                # Store command in memory for the future questions 
+                if self.memory:
+                    self.memory.set_last_command(text, handler.__name__)
                 handler()
             elif self.gemini:
                 self.dialog.show_thinking()

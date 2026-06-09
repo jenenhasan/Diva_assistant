@@ -4,60 +4,59 @@ import tempfile
 import os
 import time
 import threading
+import numpy as np
 
 class MicrophoneRecorder:
-    """Simple recorder that writes WAV files from microphone."""
-    def __init__(self, rate=16000, chunk=1024, channels=1, format=pyaudio.paInt16):
+    def __init__(self, device_index=4, rate=44100):
         self.rate = rate
-        self.chunk = chunk
-        self.channels = channels
-        self.format = format
+        self.device_index = device_index
         self.p = pyaudio.PyAudio()
-        self.stream = None
         self._lock = threading.Lock()
 
-    def record(self, duration: float, silence_timeout: float = 0.7) -> str:
-        """
-        Record until either duration or silence_timeout seconds of silence.
-        Returns path to temporary WAV file.
-        """
+    def record(self, duration=5, silence_timeout=0.7):
+        """Record audio, returns path to WAV file."""
         with self._lock:
-            self.stream = self.p.open(format=self.format,
-                                       channels=self.channels,
-                                       rate=self.rate,
-                                       input=True,
-                                       frames_per_buffer=self.chunk)
+            stream = self.p.open(
+                format=pyaudio.paInt16,
+                channels=1,
+                rate=self.rate,
+                input=True,
+                input_device_index=self.device_index,
+                frames_per_buffer=1024
+            )
+            
             frames = []
             silent_chunks = 0
-            max_silent_chunks = int(silence_timeout * self.rate / self.chunk)
-            start_time = time.time()
-            while time.time() - start_time < duration:
-                data = self.stream.read(self.chunk, exception_on_overflow=False)
-                frames.append(data)
-                # simple energy detection
-                energy = max(abs(int.from_bytes(data[i:i+2], 'little', signed=True))
-                             for i in range(0, len(data), 2))
-                if energy < 500:  # silence threshold
+            max_silent = int(silence_timeout * self.rate / 1024)
+            start = time.time()
+            
+            while time.time() - start < duration:
+                data = stream.read(1024, exception_on_overflow=False)
+                
+                # Simple noise gate
+                samples = np.frombuffer(data, dtype=np.int16)
+                if np.max(np.abs(samples)) < 500:  # silence threshold
                     silent_chunks += 1
+                    if silent_chunks > max_silent and len(frames) > 10:
+                        break
                 else:
                     silent_chunks = 0
-                if silent_chunks > max_silent_chunks and len(frames) > 10:
-                    break
-            self.stream.stop_stream()
-            self.stream.close()
-            self.stream = None
-
-            # write to temp file
+                    # Keep audio as-is (no hiss filtering needed)
+                
+                frames.append(data)
+            
+            stream.stop_stream()
+            stream.close()
+            
+            # Save to temp file
             fd, path = tempfile.mkstemp(suffix='.wav')
             with os.fdopen(fd, 'wb') as f:
-                wf = wave.open(f, 'wb')
-                wf.setnchannels(self.channels)
-                wf.setsampwidth(self.p.get_sample_size(self.format))
-                wf.setframerate(self.rate)
-                wf.writeframes(b''.join(frames))
-                wf.close()
+                with wave.open(f, 'wb') as wf:
+                    wf.setnchannels(1)
+                    wf.setsampwidth(self.p.get_sample_size(pyaudio.paInt16))
+                    wf.setframerate(self.rate)
+                    wf.writeframes(b''.join(frames))
             return path
-    
 
     def __del__(self):
         self.p.terminate()

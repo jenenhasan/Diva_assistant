@@ -1,12 +1,13 @@
 import time
 import json
 import sys
+from audio.recorder import MicrophoneRecorder
 
 class DialogManager:
     def __init__(self, tts_engine, stt_engine, audio_recorder=None):
         self.tts = tts_engine
         self.stt = stt_engine
-        self.recorder = audio_recorder  # optional: handles mic recording
+        self.recorder = audio_recorder or MicrophoneRecorder()
         self.max_retries = 2
         self.short_timeout = 5
         self.long_timeout = 30
