@@ -7,13 +7,20 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import pathlib
 
-cred_path = pathlib.Path(__file__).parent / "googlecal.json"
+# cred_path = pathlib.Path(__file__).parent / "googlecal.json"
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 class GoogleCalendarClient:
     def __init__(self, creds_file: str = "googlecal.json", token_file: str = "token.json"):
-        self.creds_file = creds_file
+        self.project_root = pathlib.Path(__file__).parent.parent
+        
+        
+        if creds_file is None:
+            self.creds_file = str(self.project_root / "googlecal.json")
+        else:
+            self.creds_file = creds_file
+        
         self.token_file = token_file
         self.service = self._authenticate()
 
@@ -48,9 +55,8 @@ class GoogleCalendarClient:
             orderBy="startTime"
         ).execute()
         return events_result.get("items", [])
-    
-if __name__ == '__main__' : 
-    client = GoogleCalendarClient(creds_file=cred_path)
+if __name__ == '__main__': 
+    client = GoogleCalendarClient()  # Uses default "googlecal.json"
     events = client.list_events(max_results=5)
     print(f"Found {len(events)} upcoming events")
     for e in events:
