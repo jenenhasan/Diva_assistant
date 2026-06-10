@@ -215,7 +215,7 @@ Each feature registers independently. A missing API key or broken integration wo
 
 ## 👩‍💻 Author
 
-**Jenen Hasan** — Fresh CS Graduate | Python Developer
+**Jenen Hasan** — Software engineer
 
 [![GitHub](https://img.shields.io/badge/GitHub-jenenhasan-181717?logo=github)](https://github.com/jenenhasan)
 
