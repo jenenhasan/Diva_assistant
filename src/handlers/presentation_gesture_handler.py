@@ -1,19 +1,19 @@
-class GestureHandler:
+class PresentationGestureHandler:
     def __init__(self, dialog, gesture_service):
         self.dialog = dialog
         self.gesture = gesture_service
 
     def register(self, router):
-        """Register all gesture intents with the router."""
-        router.register(r"start gesture|gesture on|turn on gesture", self.handle_start_gesture)
-        router.register(r"stop gesture|gesture off|turn off gesture", self.handle_stop_gesture)
-        router.register(r"toggle gesture|gesture mode|switch gesture", self.handle_toggle_gesture)
+        """Register all presentation gesture intents with the router."""
+        router.register(r"start presentation gesture|presentation mode on|start gesture presentation", self.handle_start_gesture)
+        router.register(r"stop presentation gesture|presentation mode off|stop gesture presentation", self.handle_stop_gesture)
+        router.register(r"toggle presentation gesture|presentation mode|gesture presentation", self.handle_toggle_gesture)
         return self
 
     def handle_start_gesture(self):
-        """Start gesture tracking mode."""
+        """Start presentation gesture tracking."""
         if self.gesture.is_running():
-            self.dialog.speak("Gesture tracking is already running.")
+            self.dialog.speak("Presentation gesture tracking is already running.")
             return
 
         self.dialog.show_thinking()
@@ -21,15 +21,15 @@ class GestureHandler:
         self.dialog.hide_thinking()
 
         if result["success"]:
-            self.dialog.speak("Gesture tracking started. Use pinch for Tab, swipe for scrolling.")
-            self.dialog.speak("Say 'stop gesture' to turn it off.")
+            self.dialog.speak("Presentation gesture tracking started. Swipe right for next slide, left for previous slide.")
+            self.dialog.speak("Say 'stop presentation gesture' to turn it off.")
         else:
             self.dialog.speak(f"Failed to start gesture tracking: {result['error']}")
 
     def handle_stop_gesture(self):
-        """Stop gesture tracking mode."""
+        """Stop presentation gesture tracking."""
         if not self.gesture.is_running():
-            self.dialog.speak("Gesture tracking is not running.")
+            self.dialog.speak("Presentation gesture tracking is not running.")
             return
 
         self.dialog.show_thinking()
@@ -37,12 +37,12 @@ class GestureHandler:
         self.dialog.hide_thinking()
 
         if result["success"]:
-            self.dialog.speak("Gesture tracking stopped.")
+            self.dialog.speak("Presentation gesture tracking stopped.")
         else:
             self.dialog.speak(f"Failed to stop gesture tracking: {result['error']}")
 
     def handle_toggle_gesture(self):
-        """Toggle gesture tracking on/off."""
+        """Toggle presentation gesture tracking on/off."""
         if self.gesture.is_running():
             self.handle_stop_gesture()
         else:
@@ -52,7 +52,6 @@ class GestureHandler:
 if __name__ == "__main__":
     from unittest.mock import MagicMock
     
-    # Mock DialogManager
     class MockDialog:
         def speak(self, text):
             print(f"[ASSISTANT] {text}")
@@ -63,7 +62,6 @@ if __name__ == "__main__":
         def hide_thinking(self):
             print("[DONE]")
     
-    # Mock GestureService
     class MockGestureService:
         def __init__(self):
             self._running = False
@@ -73,25 +71,18 @@ if __name__ == "__main__":
         
         def start(self):
             self._running = True
-            return {"success": True, "message": "Gesture tracking started"}
+            return {"success": True, "message": "Started"}
         
         def stop(self):
             self._running = False
-            return {"success": True, "message": "Gesture tracking stopped"}
+            return {"success": True, "message": "Stopped"}
     
-    # Test
-    print("\n🧪 TESTING GestureHandler\n")
-    method = input("Which method? (start / stop / toggle): ").strip().lower()
-    
+    print("\n🧪 TESTING PresentationGestureHandler\n")
     mock_dialog = MockDialog()
     mock_gesture = MockGestureService()
-    handler = GestureHandler(mock_dialog, mock_gesture)
+    handler = PresentationGestureHandler(mock_dialog, mock_gesture)
     
-    if method == "start":
-        handler.handle_start_gesture()
-    elif method == "stop":
-        handler.handle_stop_gesture()
-    elif method == "toggle":
-        handler.handle_toggle_gesture()
-    else:
-        print("Unknown method. Use 'start', 'stop', or 'toggle'.")
+    print("Testing start...")
+    handler.handle_start_gesture()
+    print("\nTesting stop...")
+    handler.handle_stop_gesture()
