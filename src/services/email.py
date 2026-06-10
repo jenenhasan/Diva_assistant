@@ -36,7 +36,7 @@ class EmailService:
                     if email:
                         contacts[name] = email
         # TODO: add Google People API if available
-        return contacts
+        return self._get_all_contacts()
 
     def _extract_name_email(self, contact_str: str):
         pattern = r'(?:"?([^"<]*)"?\s*<([^>]+)>|([^<\s]+))'
